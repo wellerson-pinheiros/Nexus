@@ -21,5 +21,25 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      # 1. Subimos APENAS o banco de dados usando o seu docker-compose
+      - name: Iniciar o Banco de Dados (Postgres)
+        env:
+          # O compose precisa dessas variáveis para criar o banco
+          DB_GAME_STORE_USERNAME: ${DB_GAME_STORE_USERNAME}  # Substitua pelo usuário real ou use secrets
+          DB_GAME_STORE_PASSWORD: ${DB_GAME_STORE_PASSWORD}   # Substitua pela senha real ou use secrets
+        run: |
+          docker compose up -d postgres
+          
+          # Aguarda alguns segundos para garantir que o Postgres inicializou
+          echo "Aguardando o banco de dados iniciar..."
+          sleep 10 
+
+      # 2. Rodamos o build injetando as variáveis para a aplicação achar o banco
       - name: Fazer o Build e rodar os testes
+        env:
+          # ATENÇÃO: Como o Maven está rodando FORA do container, ele acessa o banco via localhost.
+          # A porta 5432 do container já está exposta para o host no seu docker-compose.yml.
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/db-game_store
+          DB_GAME_STORE_USERNAME: ${DB_GAME_STORE_USERNAME}   # O mesmo usado acima
+          DB_GAME_STORE_PASSWORD: ${DB_GAME_STORE_PASSWORD}
         run: mvn clean install
