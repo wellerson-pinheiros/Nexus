@@ -1,0 +1,31 @@
+services:
+  # 1. Configuração do Banco de Dados
+  postgres:
+    image: postgres:16-alpine
+    container_name: gamestore-db
+    environment:
+      POSTGRES_USER: ${DB_GAME_STORE_USERNAME}
+      POSTGRES_PASSWORD: ${DB_GAME_STORE_PASSWORD}
+      POSTGRES_DB: db-game_store
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 2. Configurando api (AGORA COM O ESPAÇAMENTO CORRETO)
+  api:
+    build: .
+    image: nexus
+    container_name: nexus-api
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    environment:
+      # NOME CORRIGIDO: Agora a URL aponta para 'postgres'
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/db-game_store
+      DB_GAME_STORE_USERNAME: ${DB_GAME_STORE_USERNAME}
+      DB_GAME_STORE_PASSWORD: ${DB_GAME_STORE_PASSWORD}
+
+volumes:
+  postgres_data:
