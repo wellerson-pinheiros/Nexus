@@ -15,6 +15,7 @@ public class Usuario {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "usuario_id")
     Long usuarioID;
 
     @NotBlank(message = "O nome do usúario não pode estár vazio")
