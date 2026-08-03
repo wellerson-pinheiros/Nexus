@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -45,21 +46,28 @@ public class Usuario implements UserDetails {
 
     LocalDateTime ultimoLogin;
 
-    //    HistoricoAcesso HistoricoAcesso;
+    @Enumerated(EnumType.STRING)
+    NivelConta nivelConta;
+
+    @OneToMany(mappedBy = "usuario",cascade = CascadeType.ALL)
+    private List<HistoricoAcesso> historicosAcesso = new ArrayList<>();
     //    Biblioteca biblioteca;
     //    ListaDesejos listaDesejos;
-    //    NivelConta nivelConta;
+
 
     // Contructor
 
     Usuario() {}
 
-    Usuario(Long usuarioID,String nome, String email, String senha, String fotoPerfil) {
+    public Usuario(Long usuarioID, NivelConta nivelConta, LocalDateTime ultimoLogin, LocalDateTime dataCadastro, String fotoPerfil, String senha, String email, String nome) {
         this.usuarioID = usuarioID;
-        this.nome = nome;
-        this.email = email;
-        this.senha = senha;
+        this.nivelConta = nivelConta;
+        this.ultimoLogin = ultimoLogin;
+        this.dataCadastro = dataCadastro;
         this.fotoPerfil = fotoPerfil;
+        this.senha = senha;
+        this.email = email;
+        this.nome = nome;
     }
 
     //Getter & Setter
@@ -118,6 +126,29 @@ public class Usuario implements UserDetails {
 
     public void setUltimoLogin(LocalDateTime ultimoLogin) {
         this.ultimoLogin = ultimoLogin;
+    }
+
+    public NivelConta getNivelConta() {
+        return nivelConta;
+    }
+
+    public void setNivelConta(NivelConta nivelConta) {
+        this.nivelConta = nivelConta;
+    }
+
+    public List<HistoricoAcesso> getHistoricosAcesso() {
+        return historicosAcesso;
+    }
+
+    public void addHistorico(HistoricoAcesso historico) {
+        this.historicosAcesso.add(historico); // Adiciona na lista do usuário
+        historico.setUsuario(this);           // SETA O USUÁRIO no histórico (Sincroniza o outro lado!)
+    }
+
+    // HELPER METHOD para Remover
+    public void removeHistorico(HistoricoAcesso historico) {
+        this.historicosAcesso.remove(historico); // Remove da lista
+        historico.setUsuario(null);              // Tira a referência do histórico
     }
 
     // Spring security metodos
