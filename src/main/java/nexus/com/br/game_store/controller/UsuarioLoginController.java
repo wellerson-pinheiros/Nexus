@@ -1,9 +1,11 @@
 package nexus.com.br.game_store.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import nexus.com.br.game_store.domain.Usuario;
 import nexus.com.br.game_store.dto.UsuarioLoginDTO;
 import nexus.com.br.game_store.dto.UsuarioLoginDTOResposta;
+import nexus.com.br.game_store.service.HistoricoAcessoService;
 import nexus.com.br.game_store.service.TokenService;
 import nexus.com.br.game_store.service.UsuarioLoginService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,8 +32,11 @@ public class UsuarioLoginController {
     @Autowired
     private TokenService tokenService;
 
+    @Autowired
+    private HistoricoAcessoService historicoAcessoService;
+
     @PostMapping
-  public ResponseEntity<UsuarioLoginDTOResposta> login (@RequestBody @Valid UsuarioLoginDTO usuarioLoginDTO ) {
+  public ResponseEntity<UsuarioLoginDTOResposta> login (@RequestBody @Valid UsuarioLoginDTO usuarioLoginDTO, HttpServletRequest request ) {
 
         // 1. Cria um token temporário com o email e a senha que vieram do Postman
         var authenticationToken = new UsernamePasswordAuthenticationToken(usuarioLoginDTO.email(),usuarioLoginDTO.senha());
@@ -42,7 +47,9 @@ public class UsuarioLoginController {
 
        Usuario usuario = (Usuario) authentication.getPrincipal();
 
-        var TokenJWT = tokenService.gerarToken(usuario);
+       var TokenJWT = tokenService.gerarToken(usuario);
+
+        historicoAcessoService.registrar(request,usuario);
 
         return ResponseEntity.ok().body(new UsuarioLoginDTOResposta(usuario.getUsuarioID(),usuario.getEmail(),usuario.getFotoPerfil(),TokenJWT));
   }

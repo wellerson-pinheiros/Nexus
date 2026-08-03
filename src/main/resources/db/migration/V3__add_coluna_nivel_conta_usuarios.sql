@@ -1,0 +1,1 @@
+ALTER TABLE tb_usuarios ADD COLUMN nivel_conta VARCHAR(255);
