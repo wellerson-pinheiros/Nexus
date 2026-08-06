@@ -57,7 +57,7 @@ public class Usuario implements UserDetails {
 
     // Contructor
 
-    Usuario() {}
+    public Usuario() {}
 
     public Usuario(Long usuarioID, NivelConta nivelConta, LocalDateTime ultimoLogin, LocalDateTime dataCadastro, String fotoPerfil, String senha, String email, String nome) {
         this.usuarioID = usuarioID;

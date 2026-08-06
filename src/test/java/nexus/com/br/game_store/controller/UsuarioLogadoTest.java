@@ -1,0 +1,85 @@
+package nexus.com.br.game_store.controller;
+
+import nexus.com.br.game_store.domain.Usuario;
+import nexus.com.br.game_store.repository.UsuarioRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.test.web.servlet.MockMvc;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@Testcontainers
+
+public class UsuarioLogadoTest {
+
+
+    @Container
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine");
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
+
+    // 3. Este método roda ANTES de cada @Test
+    @BeforeEach
+    void setUp() {
+        // Limpa a tabela para garantir que um teste não interfira no outro
+        usuarioRepository.deleteAll();
+
+        // Cria o usuário de teste
+        Usuario usuario = new Usuario();
+        usuario.setEmail("admin@nexus.com.br");
+        usuario.setNome("Admin Nexus");
+
+        // Criptografa a senha antes de salvar no banco!
+        usuario.setSenha(passwordEncoder.encode("Senha123@"));
+
+        // Se a sua entidade exigir outros campos obrigatórios (nome, roles, etc), preencha aqui
+        // usuario.setNome("Admin Nexus");
+
+        // Salva no banco de dados do Testcontainers
+        usuarioRepository.save(usuario);
+    }
+
+    @Test
+    @DisplayName("Deve retornar 200 e o Token JWT quando as credenciais forem válidas")
+    void deveRetornarStatusOkQuandoUsuarioLogadoComSucesso() throws Exception {
+
+        String jsonLogin = """
+                {
+                    "email": "admin@nexus.com.br",
+                    "senha": "Senha123@"
+                }
+                """;
+
+        mockMvc.perform(post("/login") // Troque para a sua rota exata, ex: /auth/login
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonLogin))
+                // Espera que o status seja 200 OK
+                .andExpect(status().isOk())
+                // Espera que o corpo da resposta tenha um campo "token"
+                // (Mude "token" para o nome do campo que sua API devolve)
+                .andExpect(jsonPath("$.token").exists())
+                .andExpect(jsonPath("$.token").isNotEmpty());
+
+    }
+}
