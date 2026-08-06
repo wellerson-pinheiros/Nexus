@@ -82,4 +82,46 @@ public class UsuarioLogadoTest {
                 .andExpect(jsonPath("$.token").isNotEmpty());
 
     }
+
+    @Test
+    @DisplayName("Deve retornar 403 para credenciais inválidas como senha")
+        void deveRetornarCodigo403ComCredenciasInvalidas() throws Exception {
+
+        String jsonLogin = """
+                {
+                    "email": "admin@nexus.com.br",
+                    "senha": "Senha13@"
+                }
+                """;
+
+        mockMvc.perform(post("/login") // Troque para a sua rota exata, ex: /auth/login
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonLogin))
+                // Espera que o status seja 200 OK
+                // Espera que o corpo da resposta tenha um campo "token"
+                // (Mude "token" para o nome do campo que sua API devolve)
+                .andExpect(status().isForbidden());
+
+    }
+
+    @Test
+    @DisplayName("Erro de validação caso esteja null email ou senha")
+    void deveRetornarCodigo403ComCredenciasvazia() throws Exception {
+
+        String jsonLogin = """
+                {
+                    "email": "",
+                    "senha": "Senha13@"
+                }
+                """;
+
+        mockMvc.perform(post("/login") // Troque para a sua rota exata, ex: /auth/login
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonLogin))
+                // Espera que o status seja 200 OK
+                // Espera que o corpo da resposta tenha um campo "token"
+                // (Mude "token" para o nome do campo que sua API devolve)
+                .equals(status().equals(400));
+
+    }
 }
