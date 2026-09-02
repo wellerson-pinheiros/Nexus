@@ -115,13 +115,46 @@ public class UsuarioLogadoTest {
                 }
                 """;
 
-        mockMvc.perform(post("/login") // Troque para a sua rota exata, ex: /auth/login
+        mockMvc.perform(post("/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonLogin))
                 // Espera que o status seja 200 OK
                 // Espera que o corpo da resposta tenha um campo "token"
                 // (Mude "token" para o nome do campo que sua API devolve)
-                .equals(status().equals(400));
 
+                .andExpect(status().is(400));;
     }
+
+    @Test
+    @DisplayName("Deve retornar erro ao tentar logar com um e-mail que não existe")
+    void deveRetornarErroQuandoUsuarioNaoExiste() throws Exception {
+        String jsonLogin = """
+                {
+                    "email": "fantasma@nexus.com.br",
+                    "senha": "Senha123@"
+                }
+                """;
+
+        mockMvc.perform(post("/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonLogin))
+                .andExpect(status().isForbidden()); // Ajuste para 401 se sua API retornar Unauthorized
+    }
+
+    @Test
+    @DisplayName("Deve retornar erro de validação quando o formato do e-mail for inválido")
+    void deveRetornarErroQuandoFormatoEmailInvalido() throws Exception {
+        String jsonLogin = """
+                {
+                    "email": "email-invalido-sem-formato",
+                    "senha": "Senha123@"
+                }
+                """;
+
+        mockMvc.perform(post("/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonLogin))
+                .andExpect(status().isBadRequest()); // Espera 400 por conta do @Email no DTO
+    }
+
 }
