@@ -27,6 +27,6 @@ services:
       DB_GAME_STORE_USERNAME: ${DB_GAME_STORE_USERNAME}
       DB_GAME_STORE_PASSWORD: ${DB_GAME_STORE_PASSWORD}
       RAWG_API_KEY: ${RAWG_API_KEY}
-
+      JWT_SECRET: ${JWT_SECRET}
 volumes:
   postgres_data:
