@@ -26,7 +26,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/db-game_store
       DB_GAME_STORE_USERNAME: ${DB_GAME_STORE_USERNAME}
       DB_GAME_STORE_PASSWORD: ${DB_GAME_STORE_PASSWORD}
-      secretRAWG: ${SECRET_RAWG}
+      RAWG_API_KEY: ${{ secrets.RAWG_SECRET }}
 
 volumes:
   postgres_data:
