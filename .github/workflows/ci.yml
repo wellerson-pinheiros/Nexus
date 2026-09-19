@@ -43,4 +43,5 @@ jobs:
           DB_GAME_STORE_USERNAME: ${{secrets.DB_GAME_STORE_USERNAME}}   # O mesmo usado acima
           DB_GAME_STORE_PASSWORD: ${{secrets.DB_GAME_STORE_PASSWORD}}
           JWT_SECRET: ${{secrets.JWT_SECRET}}
+          RAWG_API_KEY: ${{ secrets.RAWG_API_KEY }}
         run: mvn clean install
