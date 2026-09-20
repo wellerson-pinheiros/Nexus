@@ -3,12 +3,9 @@ package nexus.com.br.game_store.domain;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import org.hibernate.annotations.CreationTimestamp;
-import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -16,68 +13,59 @@ import java.util.Collection;
 import java.util.List;
 
 @Entity
-@Table(name = "tb_usuarios")
+@Table(name = "tb_usuario")
 public class Usuario implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "usuario_id")
-    Long usuarioID;
+    private Long id;
 
-    @NotBlank(message = "O nome do usúario não pode estár vazio")
-    String nome;
+    @NotBlank(message = "O nome do usuário não pode estar vazio")
+    private String nome;
 
-    @NotBlank(message = "O E-mail não pode estár vazio")
+    @NotBlank(message = "O E-mail não pode estar vazio")
     @Column(unique = true, nullable = false)
     @Email
-    String email;
+    private String email;
 
     @NotBlank(message = "A senha é obrigatória.")
-    @NotNull
-    String senha;
+    private String senha;
 
-    @Column(length = 300, nullable = true)
-    String fotoPerfil;
+    @Column(length = 300)
+    private String fotoPerfil;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
-    LocalDateTime dataCadastro;
+    private LocalDateTime dataCadastro;
 
-
-    LocalDateTime ultimoLogin;
+    private LocalDateTime ultimoLogin;
 
     @Enumerated(EnumType.STRING)
-    NivelConta nivelConta;
+    private NivelConta nivelConta;
 
-    @OneToMany(mappedBy = "usuario",cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL)
     private List<HistoricoAcesso> historicosAcesso = new ArrayList<>();
-    //    Biblioteca biblioteca;
-    //    ListaDesejos listaDesejos;
-
-
-    // Contructor
 
     public Usuario() {}
 
-    public Usuario(Long usuarioID, NivelConta nivelConta, LocalDateTime ultimoLogin, LocalDateTime dataCadastro, String fotoPerfil, String senha, String email, String nome) {
-        this.usuarioID = usuarioID;
-        this.nivelConta = nivelConta;
-        this.ultimoLogin = ultimoLogin;
-        this.dataCadastro = dataCadastro;
-        this.fotoPerfil = fotoPerfil;
-        this.senha = senha;
-        this.email = email;
+    public Usuario(Long id, String nome, String email, String senha, String fotoPerfil, LocalDateTime dataCadastro, LocalDateTime ultimoLogin, NivelConta nivelConta) {
+        this.id = id;
         this.nome = nome;
+        this.email = email;
+        this.senha = senha;
+        this.fotoPerfil = fotoPerfil;
+        this.dataCadastro = dataCadastro;
+        this.ultimoLogin = ultimoLogin;
+        this.nivelConta = nivelConta;
     }
 
-    //Getter & Setter
-
-    public Long getUsuarioID() {
-        return usuarioID;
+    public Long getId() {
+        return id;
     }
 
-    public void setUsuarioID(Long usuarioID) {
-        this.usuarioID = usuarioID;
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getNome() {
@@ -141,18 +129,14 @@ public class Usuario implements UserDetails {
     }
 
     public void addHistorico(HistoricoAcesso historico) {
-        this.historicosAcesso.add(historico); // Adiciona na lista do usuário
-        historico.setUsuario(this);           // SETA O USUÁRIO no histórico (Sincroniza o outro lado!)
+        this.historicosAcesso.add(historico);
+        historico.setUsuario(this);
     }
 
-    // HELPER METHOD para Remover
     public void removeHistorico(HistoricoAcesso historico) {
-        this.historicosAcesso.remove(historico); // Remove da lista
-        historico.setUsuario(null);              // Tira a referência do histórico
+        this.historicosAcesso.remove(historico);
+        historico.setUsuario(null);
     }
-
-    // Spring security metodos
-
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -160,7 +144,7 @@ public class Usuario implements UserDetails {
     }
 
     @Override
-    public @Nullable String getPassword() {
+    public String getPassword() {
         return this.getSenha();
     }
 
@@ -171,21 +155,21 @@ public class Usuario implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
-        return UserDetails.super.isAccountNonExpired();
+        return true;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return UserDetails.super.isAccountNonLocked();
+        return true;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return UserDetails.super.isCredentialsNonExpired();
+        return true;
     }
 
     @Override
     public boolean isEnabled() {
-        return UserDetails.super.isEnabled();
+        return true;
     }
 }

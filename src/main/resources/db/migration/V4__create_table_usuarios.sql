@@ -1,12 +1,6 @@
-CREATE TABLE tb_jogos (
-    id_jogo BIGSERIAL PRIMARY KEY,
+CREATE TABLE tb_genero (
+    genero_id BIGSERIAL PRIMARY KEY,
+    nome VARCHAR(255) NOT NULL,
     rawg_id BIGINT UNIQUE,
-    slug_raweg VARCHAR(255) UNIQUE,
-    titulo VARCHAR(255) NOT NULL,
-    descricao TEXT NOT NULL,
-    imagem_capa VARCHAR(512),
-    data_lancamento TIMESTAMP WITH TIME ZONE,
-    rating DOUBLE PRECISION,
-    requisitos_minimos TEXT,
-    requisitos_recomendados TEXT
+    slug VARCHAR(255) UNIQUE
 );

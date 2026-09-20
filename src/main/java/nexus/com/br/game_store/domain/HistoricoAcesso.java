@@ -11,21 +11,21 @@ public class HistoricoAcesso {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long idHistoricoAcesso;
+    private Long historico_acesso_id;
 
     @CreationTimestamp
-    Date dataHoraAcesso;
+    private Date dataHoraAcesso;
 
 
-    String ip;
+    private String ip;
 
-    String dispositivo;
+    private String dispositivo;
 
-    String localizacaoAproximada;
+    private String localizacaoAproximada;
 
-    String navegador;
+    private String navegador;
 
-    String sistemaOperacional;
+    private String sistemaOperacional;
 
     private String cidade;
 
@@ -37,10 +37,12 @@ public class HistoricoAcesso {
     @JoinColumn(name = "usuario_id") // Nome da coluna de chave estrangeira no banco
     private Usuario usuario;
 
-    public HistoricoAcesso() {}
+    public HistoricoAcesso() {
+    }
 
-    public HistoricoAcesso(Long idHistoricoAcesso, String pais, String estado, String cidade, String sistemaOperacional, String navegador, String localizacaoAproximada, String dispositivo, String ip, Date dataHoraAcesso) {
-        this.idHistoricoAcesso = idHistoricoAcesso;
+    public HistoricoAcesso(Long historico_acesso_id, Usuario usuario, String pais, String estado, String cidade, String sistemaOperacional, String navegador, String localizacaoAproximada, String dispositivo, String ip, Date dataHoraAcesso) {
+        this.historico_acesso_id = historico_acesso_id;
+        this.usuario = usuario;
         this.pais = pais;
         this.estado = estado;
         this.cidade = cidade;
@@ -52,12 +54,20 @@ public class HistoricoAcesso {
         this.dataHoraAcesso = dataHoraAcesso;
     }
 
-    public Long getIdHistoricoAcesso() {
-        return idHistoricoAcesso;
+    public Long getHistorico_acesso_id() {
+        return historico_acesso_id;
     }
 
-    public void setIdHistoricoAcesso(Long idHistoricoAcesso) {
-        this.idHistoricoAcesso = idHistoricoAcesso;
+    public void setHistorico_acesso_id(Long historico_acesso_id) {
+        this.historico_acesso_id = historico_acesso_id;
+    }
+
+    public Usuario getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
     }
 
     public String getPais() {
@@ -68,20 +78,20 @@ public class HistoricoAcesso {
         this.pais = pais;
     }
 
-    public String getEstado() {
-        return estado;
-    }
-
-    public void setEstado(String estado) {
-        this.estado = estado;
-    }
-
     public String getCidade() {
         return cidade;
     }
 
     public void setCidade(String cidade) {
         this.cidade = cidade;
+    }
+
+    public String getEstado() {
+        return estado;
+    }
+
+    public void setEstado(String estado) {
+        this.estado = estado;
     }
 
     public String getSistemaOperacional() {
@@ -130,13 +140,5 @@ public class HistoricoAcesso {
 
     public void setDataHoraAcesso(Date dataHoraAcesso) {
         this.dataHoraAcesso = dataHoraAcesso;
-    }
-
-    public Usuario getUsuario() {
-        return usuario;
-    }
-
-    public void setUsuario(Usuario usuario) {
-        this.usuario = usuario;
     }
 }
