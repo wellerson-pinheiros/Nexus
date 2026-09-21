@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -20,7 +22,7 @@ public class Jogo {
     private Long rawgId;
 
     @Column(unique = true)
-    private String slugRawg; // Corrigido de slugRaweg para slugRawg
+    private String slugRawg;
 
     @NotBlank(message = "O título é obrigatório")
     private String titulo;
@@ -30,10 +32,13 @@ public class Jogo {
     private String descricao;
 
     private String imagemCapa;
-    private Instant dataLancamento;
+    private LocalDateTime dataLancamento;
     private Double rating;
-    private String requisitosMinimos;
-    private String requisitosRecomendados;
+    private Double ratingTop;
+    private Integer ratingsCount;
+    private Integer metacritic;
+    private Integer playtime;
+    private String esrbRating; // Nome da classificação (ex: "Mature")
 
     @ManyToMany
     @JoinTable(
@@ -43,9 +48,13 @@ public class Jogo {
     )
     private Set<Genero> generos = new HashSet<>();
 
+    @OneToMany(mappedBy = "jogo", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<JogoPlataforma> plataformas = new HashSet<>();
+
     public Jogo() {}
 
-    public Jogo(Long id, Long rawgId, String slugRawg, String titulo, String descricao, String imagemCapa, Instant dataLancamento, Double rating, String requisitosMinimos, String requisitosRecomendados) {
+
+    public Jogo(Long id, Long rawgId, String slugRawg, String titulo, String descricao, String imagemCapa, LocalDateTime dataLancamento, Double rating, Double ratingTop, Integer ratingsCount, Integer metacritic, Integer playtime, String esrbRating, Set<Genero> generos, Set<JogoPlataforma> plataformas) {
         this.id = id;
         this.rawgId = rawgId;
         this.slugRawg = slugRawg;
@@ -54,8 +63,13 @@ public class Jogo {
         this.imagemCapa = imagemCapa;
         this.dataLancamento = dataLancamento;
         this.rating = rating;
-        this.requisitosMinimos = requisitosMinimos;
-        this.requisitosRecomendados = requisitosRecomendados;
+        this.ratingTop = ratingTop;
+        this.ratingsCount = ratingsCount;
+        this.metacritic = metacritic;
+        this.playtime = playtime;
+        this.esrbRating = esrbRating;
+        this.generos = generos;
+        this.plataformas = plataformas;
     }
 
     public Long getId() {
@@ -98,20 +112,20 @@ public class Jogo {
         this.descricao = descricao;
     }
 
+    public LocalDateTime getDataLancamento() {
+        return dataLancamento;
+    }
+
+    public void setDataLancamento(LocalDateTime dataLancamento) {
+        this.dataLancamento = dataLancamento;
+    }
+
     public String getImagemCapa() {
         return imagemCapa;
     }
 
     public void setImagemCapa(String imagemCapa) {
         this.imagemCapa = imagemCapa;
-    }
-
-    public Instant getDataLancamento() {
-        return dataLancamento;
-    }
-
-    public void setDataLancamento(Instant dataLancamento) {
-        this.dataLancamento = dataLancamento;
     }
 
     public Double getRating() {
@@ -122,20 +136,44 @@ public class Jogo {
         this.rating = rating;
     }
 
-    public String getRequisitosMinimos() {
-        return requisitosMinimos;
+    public Double getRatingTop() {
+        return ratingTop;
     }
 
-    public void setRequisitosMinimos(String requisitosMinimos) {
-        this.requisitosMinimos = requisitosMinimos;
+    public void setRatingTop(Double ratingTop) {
+        this.ratingTop = ratingTop;
     }
 
-    public String getRequisitosRecomendados() {
-        return requisitosRecomendados;
+    public Integer getRatingsCount() {
+        return ratingsCount;
     }
 
-    public void setRequisitosRecomendados(String requisitosRecomendados) {
-        this.requisitosRecomendados = requisitosRecomendados;
+    public void setRatingsCount(Integer ratingsCount) {
+        this.ratingsCount = ratingsCount;
+    }
+
+    public Integer getMetacritic() {
+        return metacritic;
+    }
+
+    public void setMetacritic(Integer metacritic) {
+        this.metacritic = metacritic;
+    }
+
+    public Integer getPlaytime() {
+        return playtime;
+    }
+
+    public void setPlaytime(Integer playtime) {
+        this.playtime = playtime;
+    }
+
+    public String getEsrbRating() {
+        return esrbRating;
+    }
+
+    public void setEsrbRating(String esrbRating) {
+        this.esrbRating = esrbRating;
     }
 
     public Set<Genero> getGeneros() {
@@ -144,5 +182,13 @@ public class Jogo {
 
     public void setGeneros(Set<Genero> generos) {
         this.generos = generos;
+    }
+
+    public Set<JogoPlataforma> getPlataformas() {
+        return plataformas;
+    }
+
+    public void setPlataformas(Set<JogoPlataforma> plataformas) {
+        this.plataformas = plataformas;
     }
 }
