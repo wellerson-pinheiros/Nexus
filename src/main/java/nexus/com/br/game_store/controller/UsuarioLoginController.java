@@ -51,6 +51,7 @@ public class UsuarioLoginController {
 
         historicoAcessoService.registrar(request,usuario);
 
-        return ResponseEntity.ok().body(new UsuarioLoginDTOResposta(usuario.getUsuarioID(),usuario.getEmail(),usuario.getFotoPerfil(),TokenJWT));
+
+        return ResponseEntity.ok().body(new UsuarioLoginDTOResposta(usuario.getId(), usuario.getEmail(),usuario.getFotoPerfil(),TokenJWT));
   }
 }
