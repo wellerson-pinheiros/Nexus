@@ -51,6 +51,9 @@ public class Jogo {
     @OneToMany(mappedBy = "jogo", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<JogoPlataforma> plataformas = new HashSet<>();
 
+    @OneToMany(mappedBy = "jogo", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ListaItemDesejo> listaItemDesejo = new HashSet<>();
+
     public Jogo() {}
 
 
