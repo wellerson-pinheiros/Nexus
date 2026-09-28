@@ -19,4 +19,13 @@ public class ExcepitionRandler {
         return ResponseEntity.status(status).body(standardError);
     }
 
+    @ExceptionHandler(ResourceAlreadyRegistered.class)
+    public ResponseEntity<StandardError> ResourceAlreadyRegistered (ResourceAlreadyRegistered e, HttpServletRequest request) {
+        String error = "Resource already registered";
+        HttpStatus status = HttpStatus.CONFLICT;
+        StandardError standardError = new StandardError(Instant.now(), request.getRequestURI(), e.getMessage(), error, status.value());
+        return ResponseEntity.status(status).body(standardError);
+    }
+
+
 }
