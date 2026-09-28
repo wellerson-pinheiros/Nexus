@@ -4,6 +4,7 @@ package nexus.com.br.game_store.service;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import nexus.com.br.game_store.domain.Usuario;
+import nexus.com.br.game_store.dto.AlterarSenhaDTO;
 import nexus.com.br.game_store.dto.UsuarioCadastroDTO;
 import nexus.com.br.game_store.dto.UsuarioPerfilUpdateDTO;
 import nexus.com.br.game_store.dto.UsuarioResponseDTO;
@@ -100,4 +101,26 @@ public class UsuarioService {
 
         usuarioRepository.delete(usuario);
     }
+
+    @Transactional
+    public void alterarSenha(Long usuarioId, AlterarSenhaDTO dto) {
+        // 1. Busca o usuário no banco
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado."));
+
+        // 2. Verifica se a senha atual informada bate com a do banco
+        if (!passwordEncoder.matches(dto.senhaAtual(), usuario.getSenha())) {
+            throw new IllegalArgumentException("A senha atual informada está incorreta.");
+        }
+
+        // 3. Verifica se a nova senha é igual à antiga (opcional, mas recomendado)
+        if (passwordEncoder.matches(dto.novaSenha(), usuario.getSenha())) {
+            throw new IllegalArgumentException("A nova senha não pode ser igual à senha atual.");
+        }
+
+        // 4. Encripta a nova senha e salva
+        usuario.setSenha(passwordEncoder.encode(dto.novaSenha()));
+        usuarioRepository.save(usuario);
+    }
+
 }

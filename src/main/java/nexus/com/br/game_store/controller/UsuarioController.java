@@ -2,6 +2,7 @@ package nexus.com.br.game_store.controller;
 
 import jakarta.validation.Valid;
 import nexus.com.br.game_store.domain.Usuario;
+import nexus.com.br.game_store.dto.AlterarSenhaDTO;
 import nexus.com.br.game_store.dto.UsuarioCadastroDTO;
 import nexus.com.br.game_store.dto.UsuarioPerfilUpdateDTO;
 import nexus.com.br.game_store.dto.UsuarioResponseDTO;
@@ -87,6 +88,16 @@ public class UsuarioController {
         //}
 
         service.deletarPropriaConta(id);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/alterar-senha")
+    public ResponseEntity<Void> alterarSenha(
+            @RequestBody @Valid AlterarSenhaDTO dto,
+            @AuthenticationPrincipal Usuario usuarioLogado) {
+
+        service.alterarSenha(usuarioLogado.getId(), dto);
 
         return ResponseEntity.noContent().build();
     }
