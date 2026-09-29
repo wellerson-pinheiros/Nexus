@@ -3,6 +3,7 @@ package nexus.com.br.game_store.service;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import nexus.com.br.game_store.domain.TokenResetSenha;
 import nexus.com.br.game_store.domain.Usuario;
 import nexus.com.br.game_store.dto.AlterarSenhaDTO;
 import nexus.com.br.game_store.dto.UsuarioCadastroDTO;
@@ -10,12 +11,16 @@ import nexus.com.br.game_store.dto.UsuarioPerfilUpdateDTO;
 import nexus.com.br.game_store.dto.UsuarioResponseDTO;
 import nexus.com.br.game_store.excecoes.ResourceAlreadyRegistered;
 import nexus.com.br.game_store.excecoes.ResourceNotFoundException;
+import nexus.com.br.game_store.repository.TokenResetSenhaRepository;
 import nexus.com.br.game_store.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class UsuarioService {
@@ -25,6 +30,12 @@ public class UsuarioService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private TokenResetSenhaRepository tokenResetSenhaRepository;
+
+    @Autowired
+    private  EmailService emailService;
 
     public List<UsuarioResponseDTO> buscarTodos() {
         return usuarioRepository.findAll()
@@ -121,6 +132,72 @@ public class UsuarioService {
         // 4. Encripta a nova senha e salva
         usuario.setSenha(passwordEncoder.encode(dto.novaSenha()));
         usuarioRepository.save(usuario);
+    }
+
+    @Transactional
+    public void solicitarRecuperacaoDeSenha(String email) {
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);
+
+        // Se o usuário não existir, retornamos silenciosamente por segurança
+        if (usuarioOpt.isEmpty()) {
+            return;
+        }
+
+        Usuario usuario = usuarioOpt.get();
+
+        // 1. Reutiliza o registro no banco se já existir um token para este usuário, ou cria uma nova entidade
+        TokenResetSenha tokenEntidade = tokenResetSenhaRepository.findByUsuario(usuario)
+                .orElseGet(TokenResetSenha::new);
+
+        // 2. Gera o novo token e atualiza os dados do registro
+        String token = UUID.randomUUID().toString();
+        tokenEntidade.setToken(token);
+        tokenEntidade.setUsuario(usuario);
+        tokenEntidade.setDataExpiracao(LocalDateTime.now().plusHours(15)); // Ajustado para 15 minutos para alinhar com o texto do e-mail
+
+        // 3. Salva no banco (O Spring executará UPDATE se já existia ou INSERT se for o primeiro pedido)
+        tokenResetSenhaRepository.save(tokenEntidade);
+
+        // 4. Monta o e-mail personalizado
+        String linkFrontEnd = "http://localhost:3000/redefinir-senha?token=" + token;
+
+        String assunto = "Recuperação de Senha - Nexus Game Store";
+        String mensagem = "Olá, " + usuario.getNome() + "!\n\n" +
+                "Você solicitou a recuperação de sua senha.\n" +
+                "Clique no link abaixo para criar uma nova senha:\n" +
+                linkFrontEnd + "\n\n" +
+                "Este link é válido por 15 minutos.\n" +
+                "Se você não solicitou essa alteração, apenas ignore este e-mail.";
+
+        // 5. Chama o seu EmailService para disparar
+        emailService.enviarEmail(usuario.getEmail(), assunto, mensagem);
+    }
+
+    @Transactional
+    public void redefinirSenha(String token, String novaSenha) {
+        // Busca o token no banco de dados
+        TokenResetSenha tokenEntidade = tokenResetSenhaRepository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Token inválido ou não encontrado."));
+
+        // Verifica se o token já passou da validade
+        if (tokenEntidade.getDataExpiracao().isBefore(LocalDateTime.now())) {
+            tokenResetSenhaRepository.delete(tokenEntidade); // Apaga o token vencido para limpar o banco
+            throw new RuntimeException("O link de recuperação expirou. Solicite um novo.");
+        }
+
+        // Se chegou aqui, o token é válido! Vamos pegar o usuário associado a ele
+        Usuario usuario = tokenEntidade.getUsuario();
+
+        // Criptografa a nova senha antes de salvar
+        usuario.setSenha(passwordEncoder.encode(novaSenha));
+
+        // Salva o usuário com a senha nova
+        usuarioRepository.save(usuario);
+
+        // DELETA o token do banco para que o link não possa ser usado novamente
+        tokenResetSenhaRepository.delete(tokenEntidade);
+
+        emailService.enviarEmailSenhaAlterada(usuario.getEmail());
     }
 
 }

@@ -2,10 +2,7 @@ package nexus.com.br.game_store.controller;
 
 import jakarta.validation.Valid;
 import nexus.com.br.game_store.domain.Usuario;
-import nexus.com.br.game_store.dto.AlterarSenhaDTO;
-import nexus.com.br.game_store.dto.UsuarioCadastroDTO;
-import nexus.com.br.game_store.dto.UsuarioPerfilUpdateDTO;
-import nexus.com.br.game_store.dto.UsuarioResponseDTO;
+import nexus.com.br.game_store.dto.*;
 import nexus.com.br.game_store.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -100,5 +97,24 @@ public class UsuarioController {
         service.alterarSenha(usuarioLogado.getId(), dto);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/esqueci-minha-senha")
+    public ResponseEntity<String> solicitarRecuperacao(@Valid @RequestBody EsqueciMinhaSenhaDTO request) {
+
+        // Chamaremos a service aqui:
+        service.solicitarRecuperacaoDeSenha(request.email());
+
+        // Lembre-se da regra de segurança: sempre retornar sucesso mesmo se o e-mail não existir
+        return ResponseEntity.ok("Se o e-mail estiver cadastrado, um link de recuperação foi enviado.");
+    }
+
+    @PutMapping("/redefinir-senha")
+    public ResponseEntity<String> redefinirSenha(@Valid @RequestBody RedefinirSenhaRequest request) {
+
+        // Passando os dados do record para a Service
+        service.redefinirSenha(request.token(), request.novaSenha());
+
+        return ResponseEntity.ok("Senha redefinida com sucesso.");
     }
 }
