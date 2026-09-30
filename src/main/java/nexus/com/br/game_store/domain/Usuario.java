@@ -48,6 +48,9 @@ public class Usuario implements UserDetails {
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<ListaDesejos> listasDesejos = new HashSet<>();
 
+    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    private TokenResetSenha tokenResetSenha;
+
     public Usuario() {}
 
     public Usuario(Long id, String nome, String email, String senha, String fotoPerfil, LocalDateTime dataCadastro, LocalDateTime ultimoLogin, NivelConta nivelConta) {
@@ -173,4 +176,14 @@ public class Usuario implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
+
+    public TokenResetSenha getTokenResetSenha() {
+        return tokenResetSenha;
+    }
+
+    public void setTokenResetSenha(TokenResetSenha tokenResetSenha) {
+        this.tokenResetSenha = tokenResetSenha;
+    }
+
+
 }
