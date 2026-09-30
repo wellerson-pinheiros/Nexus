@@ -153,7 +153,7 @@ public class UsuarioService {
         String token = UUID.randomUUID().toString();
         tokenEntidade.setToken(token);
         tokenEntidade.setUsuario(usuario);
-        tokenEntidade.setDataExpiracao(LocalDateTime.now().plusHours(15)); // Ajustado para 15 minutos para alinhar com o texto do e-mail
+        tokenEntidade.setDataExpiracao(LocalDateTime.now().plusMinutes(15)); // Ajustado para 15 minutos para alinhar com o texto do e-mail
 
         // 3. Salva no banco (O Spring executará UPDATE se já existia ou INSERT se for o primeiro pedido)
         tokenResetSenhaRepository.save(tokenEntidade);
@@ -175,27 +175,23 @@ public class UsuarioService {
 
     @Transactional
     public void redefinirSenha(String token, String novaSenha) {
-        // Busca o token no banco de dados
+
         TokenResetSenha tokenEntidade = tokenResetSenhaRepository.findByToken(token)
                 .orElseThrow(() -> new RuntimeException("Token inválido ou não encontrado."));
 
-        // Verifica se o token já passou da validade
         if (tokenEntidade.getDataExpiracao().isBefore(LocalDateTime.now())) {
-            tokenResetSenhaRepository.delete(tokenEntidade); // Apaga o token vencido para limpar o banco
+            tokenResetSenhaRepository.delete(tokenEntidade);
             throw new RuntimeException("O link de recuperação expirou. Solicite um novo.");
         }
 
-        // Se chegou aqui, o token é válido! Vamos pegar o usuário associado a ele
         Usuario usuario = tokenEntidade.getUsuario();
 
-        // Criptografa a nova senha antes de salvar
         usuario.setSenha(passwordEncoder.encode(novaSenha));
 
-        // Salva o usuário com a senha nova
-        usuarioRepository.save(usuario);
-
-        // DELETA o token do banco para que o link não possa ser usado novamente
-        tokenResetSenhaRepository.delete(tokenEntidade);
+        // Remove a associação.
+        // Como Usuario possui orphanRemoval = true,
+        // o Hibernate deverá excluir o TokenResetSenha do banco.
+        usuario.setTokenResetSenha(null);
 
         emailService.enviarEmailSenhaAlterada(usuario.getEmail());
     }

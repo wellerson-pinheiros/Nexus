@@ -1,12 +1,15 @@
 package nexus.com.br.game_store.service;
 
 import jakarta.persistence.EntityNotFoundException;
+import nexus.com.br.game_store.domain.TokenResetSenha;
 import nexus.com.br.game_store.domain.Usuario;
+import nexus.com.br.game_store.dto.AlterarSenhaDTO;
 import nexus.com.br.game_store.dto.UsuarioCadastroDTO;
 import nexus.com.br.game_store.dto.UsuarioPerfilUpdateDTO;
 import nexus.com.br.game_store.dto.UsuarioResponseDTO;
 import nexus.com.br.game_store.excecoes.ResourceAlreadyRegistered;
 import nexus.com.br.game_store.excecoes.ResourceNotFoundException;
+import nexus.com.br.game_store.repository.TokenResetSenhaRepository;
 import nexus.com.br.game_store.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,6 +46,12 @@ class UsuarioServiceTest {
 
     @Captor
     private ArgumentCaptor<Usuario> usuarioCaptor;
+
+    @Mock
+    private TokenResetSenhaRepository tokenResetSenhaRepository;
+
+    @Mock
+    private EmailService emailService;
 
     private Usuario usuario;
 
@@ -271,6 +281,184 @@ class UsuarioServiceTest {
             );
 
             verify(usuarioRepository, never()).delete(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("Testes de Alteração de Senha")
+    class AlteracaoSenhaTestes {
+
+        @Test
+        @DisplayName("Deve lançar ResourceNotFoundException quando usuário não existir")
+        void alterarSenha_DeveLancarExcecao_QuandoUsuarioNaoExiste() {
+            var dto = new AlterarSenhaDTO("senhaAntiga", "novaSenha");
+            when(usuarioRepository.findById(99L)).thenReturn(Optional.empty());
+
+            ResourceNotFoundException exception = assertThrows(
+                    ResourceNotFoundException.class,
+                    () -> usuarioService.alterarSenha(99L, dto)
+            );
+
+            assertEquals("Usuário não encontrado.", exception.getMessage());
+            verify(passwordEncoder, never()).matches(anyString(), anyString());
+            verify(usuarioRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Deve lançar IllegalArgumentException quando a senha atual for incorreta")
+        void alterarSenha_DeveLancarExcecao_QuandoSenhaAtualIncorreta() {
+            AlterarSenhaDTO dto = new AlterarSenhaDTO("senhaErrada", "novaSenha");
+            when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+            when(passwordEncoder.matches("senhaErrada", usuario.getSenha())).thenReturn(false);
+
+            IllegalArgumentException exception = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> usuarioService.alterarSenha(1L, dto)
+            );
+
+            assertEquals("A senha atual informada está incorreta.", exception.getMessage());
+            verify(usuarioRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Deve lançar IllegalArgumentException quando nova senha for igual à atual")
+        void alterarSenha_DeveLancarExcecao_QuandoNovaSenhaIgualAtual() {
+            AlterarSenhaDTO dto = new AlterarSenhaDTO("senhaCorreta", "senhaCorreta");
+            when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+
+            // Simula que a senha atual bateu
+            when(passwordEncoder.matches(dto.senhaAtual(), usuario.getSenha())).thenReturn(true);
+            // Simula que a nova senha também bate com o hash antigo (ou seja, são iguais)
+            when(passwordEncoder.matches(dto.novaSenha(), usuario.getSenha())).thenReturn(true);
+
+            IllegalArgumentException exception = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> usuarioService.alterarSenha(1L, dto)
+            );
+
+            assertEquals("A nova senha não pode ser igual à senha atual.", exception.getMessage());
+            verify(usuarioRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Deve alterar a senha com sucesso")
+        void alterarSenha_DeveAlterarComSucesso_QuandoDadosValidos() {
+            AlterarSenhaDTO dto = new AlterarSenhaDTO("senhaCorreta", "novaSenhaSegura");
+            when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+
+            when(passwordEncoder.matches(dto.senhaAtual(), usuario.getSenha())).thenReturn(true);
+            when(passwordEncoder.matches(dto.novaSenha(), usuario.getSenha())).thenReturn(false);
+            when(passwordEncoder.encode(dto.novaSenha())).thenReturn("nova_senha_hash");
+
+            assertDoesNotThrow(() -> usuarioService.alterarSenha(1L, dto));
+
+            verify(usuarioRepository, times(1)).save(usuario);
+            assertEquals("nova_senha_hash", usuario.getSenha());
+        }
+    }
+
+    @Nested
+    @DisplayName("Testes de Solicitação de Recuperação de Senha")
+    class SolicitacaoRecuperacaoSenhaTestes {
+
+        @Test
+        @DisplayName("Deve retornar silenciosamente se o e-mail não existir (Segurança)")
+        void solicitarRecuperacao_DeveRetornarSilenciosamente_QuandoEmailNaoExiste() {
+            when(usuarioRepository.findByEmail("naoexiste@nexus.com")).thenReturn(Optional.empty());
+
+            assertDoesNotThrow(() -> usuarioService.solicitarRecuperacaoDeSenha("naoexiste@nexus.com"));
+
+            verify(tokenResetSenhaRepository, never()).findByUsuario(any());
+            verify(tokenResetSenhaRepository, never()).save(any());
+            verify(emailService, never()).enviarEmail(anyString(), anyString(), anyString());
+        }
+
+        @Test
+        @DisplayName("Deve criar novo token e enviar e-mail se o usuário existir")
+        void solicitarRecuperacao_DeveCriarTokenEnviarEmail_QuandoUsuarioExiste() {
+            when(usuarioRepository.findByEmail(usuario.getEmail())).thenReturn(Optional.of(usuario));
+            when(tokenResetSenhaRepository.findByUsuario(usuario)).thenReturn(Optional.empty());
+
+            assertDoesNotThrow(() -> usuarioService.solicitarRecuperacaoDeSenha(usuario.getEmail()));
+
+            verify(tokenResetSenhaRepository, times(1)).save(any(nexus.com.br.game_store.domain.TokenResetSenha.class));
+            verify(emailService, times(1)).enviarEmail(eq(usuario.getEmail()), contains("Recuperação de Senha"), anyString());
+        }
+    }
+
+    @Nested
+    @DisplayName("Testes de Redefinição de Senha")
+    class RedefinicaoSenhaTestes {
+
+        @Test
+        @DisplayName("Deve lançar RuntimeException quando o token não for encontrado")
+        void redefinirSenha_DeveLancarExcecao_QuandoTokenInvalido() {
+            when(tokenResetSenhaRepository.findByToken("token_invalido")).thenReturn(Optional.empty());
+
+            RuntimeException exception = assertThrows(
+                    RuntimeException.class,
+                    () -> usuarioService.redefinirSenha("token_invalido", "novaSenha")
+            );
+
+            assertEquals("Token inválido ou não encontrado.", exception.getMessage());
+            verify(usuarioRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Deve lançar RuntimeException e deletar token quando estiver expirado")
+        void redefinirSenha_DeveLancarExcecao_QuandoTokenExpirado() {
+            nexus.com.br.game_store.domain.TokenResetSenha tokenEntidade = new nexus.com.br.game_store.domain.TokenResetSenha();
+            tokenEntidade.setUsuario(usuario);
+            tokenEntidade.setDataExpiracao(LocalDateTime.now().minusMinutes(5)); // Token expirado há 5 minutos
+
+            when(tokenResetSenhaRepository.findByToken("token_expirado")).thenReturn(Optional.of(tokenEntidade));
+
+            RuntimeException exception = assertThrows(
+                    RuntimeException.class,
+                    () -> usuarioService.redefinirSenha("token_expirado", "novaSenha")
+            );
+
+            assertEquals("O link de recuperação expirou. Solicite um novo.", exception.getMessage());
+
+            // Verifica se o token vencido foi deletado do banco
+            verify(tokenResetSenhaRepository, times(1)).delete(tokenEntidade);
+            verify(usuarioRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Deve redefinir senha com sucesso quando token é válido")
+        void redefinirSenha_DeveRedefinirComSucesso_QuandoTokenValido() {
+
+            TokenResetSenha tokenEntidade = new TokenResetSenha();
+            tokenEntidade.setUsuario(usuario);
+            tokenEntidade.setDataExpiracao(LocalDateTime.now().plusMinutes(10));
+
+            when(tokenResetSenhaRepository.findByToken("token_valido"))
+                    .thenReturn(Optional.of(tokenEntidade));
+
+            when(passwordEncoder.encode("novaSenha123"))
+                    .thenReturn("nova_senha_hash");
+
+            assertDoesNotThrow(() ->
+                    usuarioService.redefinirSenha("token_valido", "novaSenha123")
+            );
+
+            assertEquals("nova_senha_hash", usuario.getSenha());
+
+            assertNull(usuario.getTokenResetSenha());
+
+            verify(tokenResetSenhaRepository, times(1))
+                    .findByToken("token_valido");
+
+            verify(emailService, times(1))
+                    .enviarEmailSenhaAlterada(usuario.getEmail());
+
+            verifyNoMoreInteractions(
+                    tokenResetSenhaRepository,
+                    usuarioRepository,
+                    emailService,
+                    passwordEncoder
+            );
         }
     }
 }

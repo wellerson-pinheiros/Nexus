@@ -1,0 +1,1 @@
+ALTER TABLE tb_token_reset_senha ALTER COLUMN id TYPE BIGINT;

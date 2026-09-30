@@ -39,6 +39,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests( requests -> {
                             requests.requestMatchers(HttpMethod.POST, "/login").permitAll();
                             requests.requestMatchers(HttpMethod.POST, "/usuarios/cadastrar").permitAll();
+                            requests.requestMatchers(HttpMethod.POST, "/usuarios/esqueci-minha-senha").permitAll();
+                            requests.requestMatchers(HttpMethod.PUT, "/usuarios/redefinir-senha").permitAll();
 
                     requests.requestMatchers("/error").permitAll();
                             requests .anyRequest().authenticated();

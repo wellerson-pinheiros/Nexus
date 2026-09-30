@@ -176,4 +176,14 @@ public class Usuario implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
+
+    public TokenResetSenha getTokenResetSenha() {
+        return tokenResetSenha;
+    }
+
+    public void setTokenResetSenha(TokenResetSenha tokenResetSenha) {
+        this.tokenResetSenha = tokenResetSenha;
+    }
+
+
 }

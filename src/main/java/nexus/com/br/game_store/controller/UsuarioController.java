@@ -109,7 +109,7 @@ public class UsuarioController {
         return ResponseEntity.ok("Se o e-mail estiver cadastrado, um link de recuperação foi enviado.");
     }
 
-    @PutMapping("/redefinir-senha")
+    @PutMapping("/redefinir-senha") // só é liberada após usuario acessar rota esqueci minha senha
     public ResponseEntity<String> redefinirSenha(@Valid @RequestBody RedefinirSenhaRequest request) {
 
         // Passando os dados do record para a Service

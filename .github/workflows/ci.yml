@@ -44,4 +44,5 @@ jobs:
           DB_GAME_STORE_PASSWORD: ${{secrets.DB_GAME_STORE_PASSWORD}}
           JWT_SECRET: ${{secrets.JWT_SECRET}}
           RAWG_API_KEY: ${{ secrets.RAWG_API_KEY }}
+          SPRING_BOOT_EMAIL_SECRET: ${{ secrets.SPRING_BOOT_EMAIL_SECRET }}
         run: mvn clean install

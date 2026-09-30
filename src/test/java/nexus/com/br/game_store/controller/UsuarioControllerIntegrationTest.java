@@ -1,5 +1,10 @@
 package nexus.com.br.game_store.controller;
 
+import nexus.com.br.game_store.domain.TokenResetSenha;
+import nexus.com.br.game_store.dto.AlterarSenhaDTO;
+import nexus.com.br.game_store.dto.RedefinirSenhaRequest;
+import nexus.com.br.game_store.repository.TokenResetSenhaRepository;
+import nexus.com.br.game_store.service.EmailService;
 import tools.jackson.databind.ObjectMapper;
 import nexus.com.br.game_store.domain.Usuario;
 import nexus.com.br.game_store.dto.UsuarioCadastroDTO;
@@ -19,16 +24,21 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 // Import corrigido para usar "authentication"
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.hamcrest.Matchers.hasSize;
 
@@ -58,6 +68,13 @@ class UsuarioControllerIntegrationTest {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private TokenResetSenhaRepository tokenResetSenhaRepository;
+
+    // Impede o envio de e-mails reais durante o teste de integração
+    @MockitoBean
+    private EmailService emailService;
 
     private Usuario usuarioSalvoNoBanco;
 
@@ -149,4 +166,77 @@ class UsuarioControllerIntegrationTest {
         boolean existe = usuarioRepository.findById(usuarioSalvoNoBanco.getId()).isPresent();
         assert(!existe);
     }
+
+    @Test
+    @DisplayName("Deve alterar a senha do usuário logado (204 No Content)")
+    void alterarSenha_DeveRetornar204() throws Exception {
+        AlterarSenhaDTO dto = new AlterarSenhaDTO(
+                "senha123",       // senha atual
+                "NovaSenha123!"   // nova senha válida
+        );
+
+        String jsonRequest = objectMapper.writeValueAsString(dto);
+
+        mockMvc.perform(put("/usuarios/alterar-senha")
+                        .with(authentication(tokenAutenticacao))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andDo(print())
+                .andExpect(status().isNoContent());
+
+        Usuario usuarioAtualizado = usuarioRepository.findById(usuarioSalvoNoBanco.getId()).get();
+        assert(passwordEncoder.matches("NovaSenha123!", usuarioAtualizado.getSenha()));
+    }
+
+    @Test
+    @DisplayName("Deve processar requisição de esqueci minha senha (200 OK)")
+    void esqueciMinhaSenha_DeveRetornar200() throws Exception {
+        nexus.com.br.game_store.dto.EsqueciMinhaSenhaDTO dto =
+                new nexus.com.br.game_store.dto.EsqueciMinhaSenhaDTO("wellerson@nexus.com");
+
+        String jsonRequest = objectMapper.writeValueAsString(dto);
+
+        mockMvc.perform(post("/usuarios/esqueci-minha-senha")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Se o e-mail estiver cadastrado, um link de recuperação foi enviado."));
+    }
+
+    @Test
+    @DisplayName("Deve redefinir a senha com um token válido (200 OK)")
+    void redefinirSenha_DeveRetornar200() throws Exception {
+
+        TokenResetSenha tokenEntidade = new TokenResetSenha();
+
+        tokenEntidade.setToken("token-valido-123");
+        tokenEntidade.setUsuario(usuarioSalvoNoBanco);
+        tokenEntidade.setDataExpiracao(LocalDateTime.now().plusMinutes(15));
+
+        usuarioSalvoNoBanco.setTokenResetSenha(tokenEntidade);
+
+        tokenResetSenhaRepository.save(tokenEntidade);
+
+
+
+        RedefinirSenhaRequest request = new RedefinirSenhaRequest(
+                "token-valido-123",
+                "SenhaNova@123"
+        );
+
+        String jsonRequest = objectMapper.writeValueAsString(request);
+
+        mockMvc.perform(put("/usuarios/redefinir-senha")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Senha redefinida com sucesso."));
+
+        assertTrue(tokenResetSenhaRepository
+                .findByToken("token-valido-123")
+                .isEmpty());
+    }
+
+
+
 }
