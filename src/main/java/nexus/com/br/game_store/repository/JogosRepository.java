@@ -12,4 +12,7 @@ import java.util.List;
 public interface JogosRepository extends JpaRepository<Jogo,Long> {
 
     List<Jogo> findTop10ByRatingGreaterThanEqualOrderByDataLancamentoDesc(Double ratingMinimo);
+
+    boolean existsByRawgId(Long rawgId);
+
 }

@@ -27,6 +27,7 @@ public class Plataforma {
 
     // Getters e Setters
 
+
     public Long getPlataformaId() {
         return PlataformaId;
     }
