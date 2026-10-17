@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -102,6 +103,12 @@ public class JogoPersistenciaService {
                     }
                 }
             }
+
+            BigDecimal precoCalculado = PrecoCalculator.calcularPrecoBase(
+                    jogo.getDataLancamento(),
+                    jogo.getMetacritic()
+            );
+            jogo.setPreco(precoCalculado);
 
             // 6. Salva o jogo no banco
             jogoRepository.save(jogo);

@@ -2,8 +2,10 @@ package nexus.com.br.game_store.domain;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -40,6 +42,12 @@ public class Jogo {
     private Integer metacritic;
     private Integer playtime;
     private String esrbRating; // Nome da classificação (ex: "Mature")
+    @NotNull(message = "O preço é obrigatório")
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal preco;
+
+    @Column(name = "preco_promocional", precision = 10, scale = 2)
+    private BigDecimal precoPromocional; // Fica null se não estiver em promoção
 
     @ManyToMany
     @JoinTable(
@@ -218,5 +226,34 @@ public class Jogo {
         if (plataforma != null) {
             this.plataformas.remove(plataforma);
         }
+    }
+
+    public BigDecimal getPrecoAtual() {
+        if (precoPromocional != null && precoPromocional.compareTo(BigDecimal.ZERO) > 0) {
+            return precoPromocional;
+        }
+        return preco;
+    }
+
+    public boolean emPromocao() {
+        return precoPromocional != null
+                && precoPromocional.compareTo(BigDecimal.ZERO) > 0
+                && precoPromocional.compareTo(preco) < 0;
+    }
+
+    public BigDecimal getPreco() {
+        return preco;
+    }
+
+    public void setPreco(BigDecimal preco) {
+        this.preco = preco;
+    }
+
+    public BigDecimal getPrecoPromocional() {
+        return precoPromocional;
+    }
+
+    public void setPrecoPromocional(BigDecimal precoPromocional) {
+        this.precoPromocional = precoPromocional;
     }
 }
