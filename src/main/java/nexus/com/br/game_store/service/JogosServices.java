@@ -4,6 +4,7 @@ package nexus.com.br.game_store.service;
 import nexus.com.br.game_store.domain.Jogo;
 import nexus.com.br.game_store.domain.JogoSpecifications;
 import nexus.com.br.game_store.dto.JogoDetalhesDTOResponse;
+import nexus.com.br.game_store.excecoes.ResourceNotFoundException;
 import nexus.com.br.game_store.repository.JogosRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -34,24 +35,34 @@ public class JogosServices {
 
         List<Jogo> jogosFiltrados = jogosRepository.findVitrineLancamentos(notaMinima);
 
+        if (jogosFiltrados.isEmpty()) {
+            throw new ResourceNotFoundException("Nenhum lançamento encontrado para a vitrine.");
+        }
+
         return jogosFiltrados.stream().map(JogoDetalhesDTOResponse::new).toList() ;
     }
 
     @Transactional(readOnly = true)
     public Page<JogoDetalhesDTOResponse> listarLancamentos(Pageable pageable) {
         // O Pageable já virá com a ordenação por data de lançamento decrescente do Controller
-        return jogosRepository.findAll(pageable)
-                .map(JogoDetalhesDTOResponse::new); // Convertendo para o DTO de resposta
+        Page<Jogo> pagina = jogosRepository.findAll(pageable);
+        if (pagina.isEmpty()) {
+            throw new ResourceNotFoundException("Nenhum jogo cadastrado encontrado.");
+        }
+        return pagina.map(JogoDetalhesDTOResponse::new); // Convertendo para o DTO de resposta
     }
 
     @Transactional(readOnly = true)
     public Page<JogoDetalhesDTOResponse> buscarPorNome(String titulo, Pageable pageable) {
-        return jogosRepository.findByTituloContainingIgnoreCase(titulo, pageable)
-                .map(JogoDetalhesDTOResponse::new);
+        Page<Jogo> pagina = jogosRepository.findByTituloContainingIgnoreCase(titulo, pageable);
+        if (pagina.isEmpty()) {
+            throw new ResourceNotFoundException("Nenhum jogo encontrado com o titulo: " + titulo);
+        }
+        return pagina.map(JogoDetalhesDTOResponse::new);
     }
 
     public List<JogoDetalhesDTOResponse> listarTopDestaquesHome() {
-        Double ratingMinimo = 4.0; // Considerando a escala de rating da RAWG (ex: de 0 a 5)
+        Double ratingMinimo = 4.0;
         Integer minAvaliacoes = 10;
 
         Pageable pageable = PageRequest.of(
@@ -59,8 +70,12 @@ public class JogosServices {
                 Sort.by(Sort.Direction.DESC, "ratingTop", "rating", "ratingsCount")
         );
 
-        return jogosRepository.findTopDestaques(ratingMinimo, minAvaliacoes, pageable)
-                .stream()
+        List<Jogo> destaques = jogosRepository.findTopDestaques(ratingMinimo, minAvaliacoes, pageable);
+        if (destaques.isEmpty()) {
+            throw new ResourceNotFoundException("Nenhum destaque encontrado para a home.");
+        }
+
+        return destaques.stream()
                 .map(JogoDetalhesDTOResponse::new)
                 .collect(Collectors.toList());
     }
@@ -70,8 +85,11 @@ public class JogosServices {
         Double ratingMinimo = 4.0;
         Integer minAvaliacoes = 10;
 
-        return jogosRepository.findDestaquesPaginados(ratingMinimo, minAvaliacoes, pageable)
-                .map(JogoDetalhesDTOResponse::new);
+        Page<Jogo> pagina = jogosRepository.findDestaquesPaginados(ratingMinimo, minAvaliacoes, pageable);
+        if (pagina.isEmpty()) {
+            throw new ResourceNotFoundException("Nenhum destaque paginado encontrado.");
+        }
+        return pagina.map(JogoDetalhesDTOResponse::new);
     }
 
     public Page<JogoDetalhesDTOResponse> filtrarJogos(
@@ -82,14 +100,17 @@ public class JogosServices {
             BigDecimal precoMax,
             Pageable pageable) {
 
-        // Constrói a spec combinando os filtros opcionais
         Specification<Jogo> spec = Specification.where(JogoSpecifications.comTitulo(titulo))
                 .and(JogoSpecifications.comGenero(genero))
                 .and(JogoSpecifications.comPlataforma(plataforma))
                 .and(JogoSpecifications.precoMaiorOuIgual(precoMin))
                 .and(JogoSpecifications.precoMenorOuIgual(precoMax));
 
-        return jogosRepository.findAll(spec, pageable)
-                .map(JogoDetalhesDTOResponse::new);
+        Page<Jogo> pagina = jogosRepository.findAll(spec, pageable);
+        if (pagina.isEmpty()) {
+            throw new ResourceNotFoundException("Nenhum jogo encontrado com os filtros informados.");
+        }
+
+        return pagina.map(JogoDetalhesDTOResponse::new);
     }
 }

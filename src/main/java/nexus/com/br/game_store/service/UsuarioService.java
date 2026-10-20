@@ -9,6 +9,7 @@ import nexus.com.br.game_store.dto.AlterarSenhaDTO;
 import nexus.com.br.game_store.dto.UsuarioCadastroDTO;
 import nexus.com.br.game_store.dto.UsuarioPerfilUpdateDTO;
 import nexus.com.br.game_store.dto.UsuarioResponseDTO;
+import nexus.com.br.game_store.excecoes.BusinessException;
 import nexus.com.br.game_store.excecoes.ResourceAlreadyRegistered;
 import nexus.com.br.game_store.excecoes.ResourceNotFoundException;
 import nexus.com.br.game_store.repository.TokenResetSenhaRepository;
@@ -52,7 +53,7 @@ public class UsuarioService {
     @Transactional()
     public UsuarioResponseDTO buscarPerfilPorId(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado."));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado."));
 
         return new UsuarioResponseDTO(usuario);
     }
@@ -60,7 +61,7 @@ public class UsuarioService {
     @Transactional() // vai ser liberado somente para conta Adimin
     public UsuarioResponseDTO buscarPorEmail(String email) {
         Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado.") );
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado.") );
         return new UsuarioResponseDTO(usuario);
     }
 
@@ -89,7 +90,7 @@ public class UsuarioService {
     public UsuarioResponseDTO atualizarPerfil(Long usuarioId, UsuarioPerfilUpdateDTO dto) {
         // 1. Busca o usuário no banco de dados para garantir que ele existe e está anexado ao JPA
         Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado."));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado."));
 
         // 2. Atualiza apenas os campos permitidos
         usuario.setNome(dto.nome());
@@ -107,7 +108,7 @@ public class UsuarioService {
     @Transactional
     public void deletarPropriaConta(Long usuarioId) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado."));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado."));
 
 
         usuarioRepository.delete(usuario);
@@ -121,12 +122,12 @@ public class UsuarioService {
 
         // 2. Verifica se a senha atual informada bate com a do banco
         if (!passwordEncoder.matches(dto.senhaAtual(), usuario.getSenha())) {
-            throw new IllegalArgumentException("A senha atual informada está incorreta.");
+            throw new BusinessException("A senha atual informada está incorreta.");
         }
 
         // 3. Verifica se a nova senha é igual à antiga (opcional, mas recomendado)
         if (passwordEncoder.matches(dto.novaSenha(), usuario.getSenha())) {
-            throw new IllegalArgumentException("A nova senha não pode ser igual à senha atual.");
+            throw new BusinessException("A nova senha não pode ser igual à senha atual.");
         }
 
         // 4. Encripta a nova senha e salva
