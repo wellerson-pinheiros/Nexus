@@ -1,0 +1,3 @@
+ALTER TABLE tb_jogo
+ADD COLUMN preco DECIMAL(10, 2) NOT NULL DEFAULT 99.90,
+ADD COLUMN preco_promocional DECIMAL(10, 2);

@@ -41,6 +41,7 @@ public class SecurityConfig {
                             requests.requestMatchers(HttpMethod.POST, "/usuarios/cadastrar").permitAll();
                             requests.requestMatchers(HttpMethod.POST, "/usuarios/esqueci-minha-senha").permitAll();
                             requests.requestMatchers(HttpMethod.PUT, "/usuarios/redefinir-senha").permitAll();
+                            requests.requestMatchers(HttpMethod.GET, "/jogos/lancamentos/vitrine").permitAll();
 
                     requests.requestMatchers("/error").permitAll();
                             requests .anyRequest().authenticated();

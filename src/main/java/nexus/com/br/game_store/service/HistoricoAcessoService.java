@@ -3,6 +3,7 @@ package nexus.com.br.game_store.service;
 import jakarta.servlet.http.HttpServletRequest;
 import nexus.com.br.game_store.domain.HistoricoAcesso;
 import nexus.com.br.game_store.domain.Usuario;
+import nexus.com.br.game_store.excecoes.GeolocalizacaoException;
 import nexus.com.br.game_store.repository.HistoricoAcessoRepository;
 import nl.basjes.parse.useragent.UserAgent;
 import nl.basjes.parse.useragent.UserAgentAnalyzer;
@@ -22,7 +23,7 @@ public class HistoricoAcessoService {
     private HistoricoAcessoRepository historicoRepository;
 
     public String registrar(HttpServletRequest request, Usuario usuario) {
-
+        try{
         String userAgentString = request.getHeader("User-Agent");
         String ipOrigem = extrairIp(request);
 
@@ -51,6 +52,9 @@ public class HistoricoAcessoService {
         historicoRepository.save(historico);
 
         return "Histórico registrado com sucesso.";
+    } catch (Exception e) {
+        throw new GeolocalizacaoException("Erro ao processar e registrar o histórico de acesso.", e);
+    }
     }
 
     private String extrairIp(HttpServletRequest request) {

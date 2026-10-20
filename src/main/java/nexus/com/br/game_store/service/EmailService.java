@@ -1,5 +1,6 @@
 package nexus.com.br.game_store.service;
 
+import nexus.com.br.game_store.excecoes.EmailEnvioException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -12,6 +13,8 @@ public class EmailService {
     private JavaMailSender mailSender;
 
     public void enviarEmail(String destinatario, String assunto, String mensagem) {
+
+        try{
         SimpleMailMessage email = new SimpleMailMessage();
 
         // Opcional: defina o remetente (deve ser o mesmo do application.properties)
@@ -22,9 +25,13 @@ public class EmailService {
 
         mailSender.send(email);
 
+    } catch (Exception e) {
+        throw new EmailEnvioException("Erro ao enviar e-mail para: " + destinatario, e);
+    }
     }
 
     public void enviarEmailSenhaAlterada(String emailDestinatario) {
+        try{
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom("seuemail@gmail.com");
         message.setTo(emailDestinatario);
@@ -36,5 +43,9 @@ public class EmailService {
                 "Atenciosamente,\nEquipe GameStore");
 
         mailSender.send(message);
+
+    } catch (Exception e) {
+        throw new EmailEnvioException("Erro ao enviar aviso de alteração de senha para: " + emailDestinatario, e);
+    }
     }
 }

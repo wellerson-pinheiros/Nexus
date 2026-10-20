@@ -27,5 +27,45 @@ public class ExcepitionRandler {
         return ResponseEntity.status(status).body(standardError);
     }
 
+    @ExceptionHandler(EmailEnvioException.class)
+    public ResponseEntity<StandardError> emailEnvioException(EmailEnvioException e, HttpServletRequest request) {
+        String error = "Email sending error";
+        HttpStatus status = HttpStatus.BAD_GATEWAY;
+        StandardError standardError = new StandardError(Instant.now(), request.getRequestURI(), e.getMessage(), error, status.value());
+        return ResponseEntity.status(status).body(standardError);
+    }
+
+    @ExceptionHandler(GeolocalizacaoException.class)
+    public ResponseEntity<StandardError> geolocalizacaoException(GeolocalizacaoException e, HttpServletRequest request) {
+        String error = "Geolocation service error";
+        HttpStatus status = HttpStatus.BAD_GATEWAY;
+        StandardError standardError = new StandardError(Instant.now(), request.getRequestURI(), e.getMessage(), error, status.value());
+        return ResponseEntity.status(status).body(standardError);
+    }
+
+    @ExceptionHandler(TokenJwtException.class)
+    public ResponseEntity<StandardError> tokenJwtException(TokenJwtException e, HttpServletRequest request) {
+        String error = "JWT Token error";
+        HttpStatus status = HttpStatus.UNAUTHORIZED; // 401 para problemas de token
+        StandardError standardError = new StandardError(Instant.now(), request.getRequestURI(), e.getMessage(), error, status.value());
+        return ResponseEntity.status(status).body(standardError);
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<StandardError> businessException(BusinessException e, HttpServletRequest request) {
+        String error = "Business rule violation";
+        HttpStatus status = HttpStatus.BAD_REQUEST; // 400 para regras de negócio violadas
+        StandardError standardError = new StandardError(Instant.now(), request.getRequestURI(), e.getMessage(), error, status.value());
+        return ResponseEntity.status(status).body(standardError);
+    }
+
+    @ExceptionHandler(TokenExpiradoException.class)
+    public ResponseEntity<StandardError> tokenExpiradoException(TokenExpiradoException e, HttpServletRequest request) {
+        String error = "Token expired";
+        HttpStatus status = HttpStatus.BAD_REQUEST; // 400 ou 422 para token vencido
+        StandardError standardError = new StandardError(Instant.now(), request.getRequestURI(), e.getMessage(), error, status.value());
+        return ResponseEntity.status(status).body(standardError);
+    }
+
 
 }

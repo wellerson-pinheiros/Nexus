@@ -2,10 +2,13 @@ package nexus.com.br.game_store.domain;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
-import java.time.Instant;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -27,18 +30,24 @@ public class Jogo {
     @NotBlank(message = "O título é obrigatório")
     private String titulo;
 
-    @NotBlank(message = "A descrição é obrigatória")
-    @Column(nullable = false, columnDefinition = "TEXT")
+
+    @Column(columnDefinition = "TEXT")
     private String descricao;
 
     private String imagemCapa;
-    private LocalDateTime dataLancamento;
+    private LocalDate dataLancamento;
     private Double rating;
     private Double ratingTop;
     private Integer ratingsCount;
     private Integer metacritic;
     private Integer playtime;
     private String esrbRating; // Nome da classificação (ex: "Mature")
+    @NotNull(message = "O preço é obrigatório")
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal preco;
+
+    @Column(name = "preco_promocional", precision = 10, scale = 2)
+    private BigDecimal precoPromocional; // Fica null se não estiver em promoção
 
     @ManyToMany
     @JoinTable(
@@ -57,7 +66,7 @@ public class Jogo {
     public Jogo() {}
 
 
-    public Jogo(Long id, Long rawgId, String slugRawg, String titulo, String descricao, String imagemCapa, LocalDateTime dataLancamento, Double rating, Double ratingTop, Integer ratingsCount, Integer metacritic, Integer playtime, String esrbRating, Set<Genero> generos, Set<JogoPlataforma> plataformas) {
+    public Jogo(Long id, Long rawgId, String slugRawg, String titulo, String descricao, String imagemCapa, LocalDate dataLancamento, Double rating, Double ratingTop, Integer ratingsCount, Integer metacritic, Integer playtime, String esrbRating, Set<Genero> generos, Set<JogoPlataforma> plataformas) {
         this.id = id;
         this.rawgId = rawgId;
         this.slugRawg = slugRawg;
@@ -115,11 +124,11 @@ public class Jogo {
         this.descricao = descricao;
     }
 
-    public LocalDateTime getDataLancamento() {
+    public LocalDate getDataLancamento() {
         return dataLancamento;
     }
 
-    public void setDataLancamento(LocalDateTime dataLancamento) {
+    public void setDataLancamento(LocalDate dataLancamento) {
         this.dataLancamento = dataLancamento;
     }
 
@@ -179,19 +188,72 @@ public class Jogo {
         this.esrbRating = esrbRating;
     }
 
-    public Set<Genero> getGeneros() {
-        return generos;
-    }
-
     public void setGeneros(Set<Genero> generos) {
         this.generos = generos;
     }
 
-    public Set<JogoPlataforma> getPlataformas() {
-        return plataformas;
-    }
-
     public void setPlataformas(Set<JogoPlataforma> plataformas) {
         this.plataformas = plataformas;
+    }
+
+    public Set<Genero> getGeneros() {
+        return Collections.unmodifiableSet(generos);
+    }
+
+    public void adicionarGenero(Genero genero) {
+        if (genero != null) {
+            this.generos.add(genero);
+        }
+    }
+
+    public void removerGenero(Genero genero) {
+        if (genero != null) {
+            this.generos.remove(genero);
+        }
+    }
+
+    public Set<JogoPlataforma> getPlataformas() {
+        return Collections.unmodifiableSet(plataformas);
+    }
+
+    public void adicionarPlataforma(JogoPlataforma plataforma) {
+        if (plataforma != null) {
+            this.plataformas.add(plataforma);
+        }
+    }
+
+    public void removerPlataforma(JogoPlataforma plataforma) {
+        if (plataforma != null) {
+            this.plataformas.remove(plataforma);
+        }
+    }
+
+    public BigDecimal getPrecoAtual() {
+        if (precoPromocional != null && precoPromocional.compareTo(BigDecimal.ZERO) > 0) {
+            return precoPromocional;
+        }
+        return preco;
+    }
+
+    public boolean emPromocao() {
+        return precoPromocional != null
+                && precoPromocional.compareTo(BigDecimal.ZERO) > 0
+                && precoPromocional.compareTo(preco) < 0;
+    }
+
+    public BigDecimal getPreco() {
+        return preco;
+    }
+
+    public void setPreco(BigDecimal preco) {
+        this.preco = preco;
+    }
+
+    public BigDecimal getPrecoPromocional() {
+        return precoPromocional;
+    }
+
+    public void setPrecoPromocional(BigDecimal precoPromocional) {
+        this.precoPromocional = precoPromocional;
     }
 }

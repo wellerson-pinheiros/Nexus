@@ -4,6 +4,8 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import nexus.com.br.game_store.domain.Usuario;
+import nexus.com.br.game_store.excecoes.TokenExpiradoException;
+import nexus.com.br.game_store.excecoes.TokenJwtException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -29,7 +31,7 @@ public class TokenService {
                     // reusable verifier instance
 
         } catch (JWTVerificationException exception){
-            throw new RuntimeException("Erro ao gerar Token JWT", exception );
+            throw new TokenJwtException("Token JWT inválido ou expirado!");
         }
     }
 
@@ -45,7 +47,7 @@ public class TokenService {
                     .getSubject(); // Devolve o e-mail que guardamos lá no withSubject()
 
         } catch (JWTVerificationException exception){
-            throw new RuntimeException("Token JWT inválido ou expirado!");
+            throw new TokenExpiradoException("Erro ao gerar Token JWT, token expirado ou invalido");
         }
     }
 
